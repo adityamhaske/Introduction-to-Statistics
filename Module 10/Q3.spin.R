@@ -1,0 +1,67 @@
+
+#' 
+library(nycflights13)
+
+info = na.omit(flights$arr_delay)
+
+library(infer)
+
+# from PS03 Q3 c)
+
+set.seed(520)
+
+nyc = sample(info, 100, F)
+
+# a)
+# Referred - S520_033023_lab_CI.R
+
+n = length((flights$arr_delay))
+xbar = mean((flights$arr_delay == "true"))
+xbar
+s = sd(flights$arr_delay)
+
+alpha = 1 - 0.92
+q = qt(1 - alpha/2, df = n-1)
+q
+xbar - q*(s/sqrt(n))
+xbar + q*(s/sqrt(n))
+
+# b)
+
+boot_dist <- flights %>%
+  specify(response = arr_delay) %>%
+  generate(reps = 10000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+
+percentile_ci <- get_ci(boot_dist, level = .92)
+percentile_ci
+
+visualize(boot_dist, bins = 100) +
+  shade_confidence_interval(endpoints = percentile_ci)
+
+# c)
+
+phat = mean(flights$arr_delay == "false")
+phat
+SE.p = sqrt(phat*(1-phat)/n)
+alpha = 1 - 0.96
+q = qnorm(1 - alpha/2)
+q
+
+phat - q*SE.p
+phat + q*SE.p
+
+
+# d)
+
+boot_dist <- flights %>%
+  specify(response = arr_delay, success = "false") %>%
+  generate(reps = 1000, type = "bootstrap") %>%
+  calculate(stat = "prop")
+
+percentile_ci <- get_ci(boot_dist, level = .96)
+percentile_ci
+
+visualize(boot_dist) +
+  shade_confidence_interval(endpoints = percentile_ci)
+
